@@ -1,0 +1,165 @@
+include json;
+include net.httpClient;
+include net.url;
+
+/*
+ * For details on results: http://openweathermap.org/weather-data
+ */
+
+class weatherObj
+{
+	public id = null;					// int
+	public main = null;					// string
+	public description = null;			// string
+	public icon = null;					// icon
+	
+	// gets a buffer object with the bytes of the icon file
+	public getIconPng()
+	{
+		if(this.icon)
+		{
+			hc = new httpClient(new url('http://openweathermap.org/img/w/' + this.icon + '.png'));
+			hc.setConnectionRequestTimeout(30000).setConnectTimeout(30000).setSocketTimeout(30000);
+			buff = hc.getBinary()['content'];
+			return buff;
+		}
+		else { throw "No icon name found for object."; }
+	}
+}
+
+/*
+ * Object returned from api for current weather conditions.
+ */
+class weatherResCurrent
+{
+	public countryCode = null;			// string (us, gb, ...)
+	public city = null;					// string
+	public cityId = null;				// int
+	public dateTime = null;				// date object
+	
+	public lat = null;					// double
+	public lon = null;					// double
+	
+	public sunrise = null;				// date object
+	public sunset = null;				// date object
+	
+	public temp = null;					// double
+	public tempMin = null;				// double
+	public tempMax = null;				// double
+	public pressure = null;				// double
+	public seaLevel = null;				// double
+	public groundLevel = null;			// double
+	public humidity = null;				// double
+	
+	public windSpeed = null;			// double
+	public windDegree = null;			// double
+	
+	public clouds = null;				// double percent 
+	public rain = null;					// double
+	public snow = null;					// double
+	
+	public weather = [];				// list of weatherObj objects
+	
+	public weatherResCurrent(string JsonText)
+	{
+		this.parse(JsonText);
+	}
+	
+	private parse(string JsonText)
+	{
+		data = json.parseString(JsonText);
+		
+		this.city = data.get('name');
+		this.cityId = data.get('id');
+		this.dateTime = new date(data.get('dt') * 1000);
+		
+		coord = data.geton('coord');
+		if(coord)
+		{
+			this.lat = coord.get('lat');
+			this.lon = coord.get('lon');
+		}
+		
+		syso = data.geton('sys');
+		if(syso)
+		{
+			this.countryCode = syso.get('country');
+			this.sunrise = new date(syso.get('sunrise') * 1000);
+			this.sunset = new date(syso.get('sunset') * 1000);
+		}
+		
+		mn = data.geton('main');
+		if(mn)
+		{
+			this.temp = mn.get('temp');
+			this.tempMin = mn.get('temp_min');
+			this.tempMax = mn.get('temp_max');
+			this.pressure = mn.get('pressure');
+			this.seaLevel = mn.get('sea_level');
+			this.groundLevel = mn.get('grnd_level');
+			this.humidity = mn.get('humidity');
+		}
+		
+		wind = data.geton('wind');
+		if(wind)
+		{
+			this.windSpeed = wind.get('speed');
+			this.windDegree = wind.get('deg');
+		}
+		
+		clds = data.geton('clouds');
+		if(clds) { this.clouds = clds.get('all'); }
+		
+		rn = data.geton('rain');
+		if(rn) { this.rain = rn.get('3h'); }
+		
+		sn = data.geton('snow');
+		if(sn) { this.snow = sn.get('3h'); }
+		
+		wthr = data.geton('weather');
+		if(wthr && wthr.isArray())
+		{
+			for(i = 0; i < wthr.size(); i++)
+			{
+				w = wthr.get(i);
+				wo = new weatherObj();
+				wo.id = w.get('id');
+				wo.main = w.get('main');
+				wo.description = w.get('description');
+				wo.icon = w.get('icon');
+				this.weather @= wo;
+			}
+		}
+	}
+	
+	public toString()
+	{
+		r = "country: " + this.countryCode + "\n";
+		r += "city: " + this.city + "\n";
+		r += "cityId: " + this.cityId + "\n";
+		r += "dateTime: " + this.dateTime.format() + "\n";
+		r += "loc: (" + this.lat + ", " + this.lon + ")\n";
+		r += "sunrise: " + this.sunrise.format() + "\n";
+		r += "sunset: " + this.sunset.format() + "\n";
+		r += "temp: " + this.temp + "\n";
+		r += "tempMin: " + this.tempMin + "\n";
+		r += "tempMax: " + this.tempMax + "\n";
+		r += "pressure: " + this.pressure + "\n";
+		r += "seaLevel: " + this.seaLevel + "\n";
+		r += "groundLevel: " + this.groundLevel + "\n";
+		r += "humidity: " + this.humidity + "\n";
+		r += "windSpeed: " + this.windSpeed + "\n";
+		r += "windDegree: " + this.windDegree + "\n";
+		r += "couds: " + this.clouds + "\n";
+		r += "rain: " + this.rain + "\n";
+		r += "snow: " + this.snow + "\n";
+		r += "weather:\n";
+		for(w : this.weather)
+		{
+			r += "\tid: " + w.id + ", main: " + w.main + ", description: " + w.description + ", icon: " + w.icon + "\n";
+		}
+		
+		return r;
+	}
+	
+}

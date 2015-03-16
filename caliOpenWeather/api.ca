@@ -1,0 +1,95 @@
+include net.url;
+include net.httpClient;
+
+// Response result objects
+include caliOpenWeather.resultObjects;
+
+enum units
+{
+	imperial;
+	metric;
+}
+
+// open weather language support
+enum owLang
+{
+	en;		// English
+	ru;		// Rusian
+	it;		// Italian
+	es;		// Spanish
+	uk;		// Ukrainian
+	de;		// German
+	pt;		// Portuguese
+	ro;		// Romanian
+	pl;		// Polish
+	fi;		// Finnish
+	nl;		// Dutch
+	fr;		// French
+	bg;		// Bulgarian
+	sv;		// Swedish
+	zh_tw;	// Chinese Traditional
+	zh;		// Chinese Simplified
+	tr;		// Turkish
+	hr;		// Croatian
+	ca;		// Catalan
+}
+
+class openWeatherConnector : httpClient
+{
+	host = 'http://api.openweathermap.org/';
+	apiVersion = '2.5';
+	apiKey = null;
+	units = null;
+	language = null;
+	
+	to = 30000;
+	
+	public openWeatherConnector(string ApiKey)
+	{
+		this.apiKey = ApiKey;
+	}
+	
+	/* Setters */
+	public setUnits(string Units) { this.units = Units; }
+	public setLanguage(string Language) { this.language = Language; }
+	
+	/* Getters */
+	public getUnits() { return this.units; }
+	public getLanguage() { return this.language; }
+	
+	/*
+	 * Gets the current weather for the provided CityName with 
+	 * optional CoutryCode. 
+	 * Returns a string with a weatherResCurrent object. (see resultObjects.ca)
+	 */
+	public currentCity(string CityName, string CountryCode = null)
+	{
+		if(string.trim(this.apiKey))
+		{
+			ustr = this.host + 'data/' + this.apiVersion + '/weather?APPID=' + this.apiKey + '&q=' + CityName;
+			if(CountryCode) { ustr + ',' + CountryCode; }
+			if(this.units) { ustr += '&units=' + this.units; }
+			if(this.language) { ustr += '&lang=' + this.language; }
+			
+			// init http client
+			this.httpClient(new url(ustr));
+			this.setConnectionRequestTimeout(this.to).setConnectTimeout(this.to).setSocketTimeout(this.to);
+			
+			res = this.getString();
+			if(res['statusCode'] == 200)
+			{
+				ret = new weatherResCurrent(res['content']);
+				return ret;
+			}
+			else
+			{
+				throw "[openWeatherConnector.currentCity()] HTTP call returned status code of " + res['statusCode'] + ".";
+			}
+		}
+		else
+		{
+			throw "[openWeatherConnector.currentCity()] No API key found.";
+		}
+		
+	}
+}

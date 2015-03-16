@@ -1,0 +1,78 @@
+include console;
+include test;
+
+// include api
+include caliOpenWeather.api;
+
+/*
+ * Unit tests for caliOpenWeather.
+ * How to run:
+ * shell> cali ut_caliOpenWeather.ca <apiKey>
+ * where <apiKey> is an API key from an OpenWeatherMap account.
+ */
+class ut_caliOpenWeather : test
+{
+	// api key required for test
+	public apiKey = '';
+	
+	// connector
+	con = null;
+	
+	// test vars
+	cur = null;
+	
+	public main(args)
+	{
+		if(#args > 0)
+		{	
+			// Instantiate our test and then run it.
+			tt = new ut_caliOpenWeather();
+			tt.apiKey = args[0];
+			tt.run();
+		}
+		else
+		{
+			throw "Expecting first argument to unit test to be API key.";
+		}
+	}
+	
+	/* Test constructor */
+	public ut_caliOpenWeather()
+	{
+		this.setName("Cali-Lang Open Weather Connector: caliOpenWeather/api.ca");
+		
+		// api tests
+		this
+			.add("Instantiate openWeatherConnector object.", "instantiateConnector")
+			.add("Current weather conditions for city.", "getCurrentCity")
+			.add("Current weather get icon.", "getWeatherObjIcon")
+		;
+	}
+	
+	/**********************************************************************
+	 * Open Weather Connector API Tests
+	 *********************************************************************/
+	public instantiateConnector()
+	{
+		this.con = new openWeatherConnector(this.apiKey);
+		return this.expectObject(this.con, 'openWeatherConnector');
+	}
+	
+	public getCurrentCity()
+	{
+		this.con.setUnits(units.imperial);
+		this.cur = this.con.currentCity('roseville', 'us');
+		return this.expectObject(this.cur, 'weatherResCurrent');
+	}
+	
+	public getWeatherObjIcon()
+	{
+		success = false;
+		if(this.cur)
+		{
+			img = this.cur.weather[0].getIconPng();
+			if(img instanceof 'buffer') { success = true; }
+		}
+		return this.expect(success, true);
+	}
+}
