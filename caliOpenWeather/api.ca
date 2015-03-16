@@ -108,4 +108,41 @@ class openWeatherConnector : httpClient
 		}
 		
 	}
+	
+	/*
+	 * Gets the current weather for the provided CityName with 
+	 * optional CoutryCode. 
+	 * Returns a string with a weatherResCurrent object. (see resultObjects.ca)
+	 */
+	public currentGeoBox(double LatUpperLeft, double LonUpperLeft, double LatLowerRight, double LonLowerRight, double Zoom, bool Cluster = true)
+	{
+		if(string.trim(this.apiKey))
+		{
+			ustr = this.host + 'data/' + this.apiVersion + '/weather?APPID=' + this.apiKey + '&bbox=' + LastUpperLeft + ',' + LonUpperLeft + ',' + LatLowerRight + ',' + LonLowerRight + ',' + Zoom + '&cluster=' + Cluster;
+			if(CountryCode) { ustr + ',' + CountryCode; }
+			if(this.units) { ustr += '&units=' + this.units; }
+			if(this.language) { ustr += '&lang=' + this.language; }
+			
+			// init http client
+			this.httpClient(new url(ustr));
+			this.setConnectionRequestTimeout(this.to).setConnectTimeout(this.to).setSocketTimeout(this.to);
+			
+			res = this.getString();
+			if(res['statusCode'] == 200)
+			{
+				ret = new weatherResCurrent(res['content']);
+				console.println(ret.toString());
+				return ret;
+			}
+			else
+			{
+				throw "[openWeatherConnector.currentCity()] HTTP call returned status code of " + res['statusCode'] + ".";
+			}
+		}
+		else
+		{
+			throw "[openWeatherConnector.currentCity()] No API key found.";
+		}
+		
+	}
 }

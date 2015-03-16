@@ -46,11 +46,49 @@ class weatherObj
 /*
  * Object returned from api for current weather conditions.
  */
-class weatherResCurrent
+class weatherResCurrent : weatherResBase
 {
 	public countryCode = null;			// string (us, gb, ...)
 	public city = null;					// string
 	public cityId = null;				// int
+	
+	public weatherResCurrent(string JsonText)
+	{
+		this.parse(JsonText);
+	}
+	
+	private parse(string JsonText)
+	{
+		data = json.parseString(JsonText);
+		
+		this.city = data.get('name');
+		this.cityId = data.get('id');
+		this.baseParse(data);			// base class call
+		
+		syso = data.geton('sys');
+		if(syso)
+		{
+			this.countryCode = syso.get('country');
+		}
+	}
+	
+	public toString()
+	{
+		r = "country: " + this.countryCode + "\n";
+		r += "city: " + this.city + "\n";
+		r += "cityId: " + this.cityId + "\n";
+		
+		r += this.baseToString();		// base class call
+		
+		return r;
+	}
+}
+
+/*
+ * Base weather conditions object.
+ */
+class weatherResBase
+{
 	public dateTime = null;				// date object
 	
 	public lat = null;					// double
@@ -76,17 +114,8 @@ class weatherResCurrent
 	
 	public weather = [];				// list of weatherObj objects
 	
-	public weatherResCurrent(string JsonText)
+	private baseParse(object data)
 	{
-		this.parse(JsonText);
-	}
-	
-	private parse(string JsonText)
-	{
-		data = json.parseString(JsonText);
-		
-		this.city = data.get('name');
-		this.cityId = data.get('id');
 		this.dateTime = new date(data.get('dt') * 1000);
 		
 		coord = data.geton('coord');
@@ -99,7 +128,6 @@ class weatherResCurrent
 		syso = data.geton('sys');
 		if(syso)
 		{
-			this.countryCode = syso.get('country');
 			this.sunrise = new date(syso.get('sunrise') * 1000);
 			this.sunset = new date(syso.get('sunset') * 1000);
 		}
@@ -148,12 +176,9 @@ class weatherResCurrent
 		}
 	}
 	
-	public toString()
+	public baseToString()
 	{
-		r = "country: " + this.countryCode + "\n";
-		r += "city: " + this.city + "\n";
-		r += "cityId: " + this.cityId + "\n";
-		r += "dateTime: " + this.dateTime.format() + "\n";
+		r = "dateTime: " + this.dateTime.format() + "\n";
 		r += "loc: (" + this.lat + ", " + this.lon + ")\n";
 		r += "sunrise: " + this.sunrise.format() + "\n";
 		r += "sunset: " + this.sunset.format() + "\n";
@@ -177,5 +202,4 @@ class weatherResCurrent
 		
 		return r;
 	}
-	
 }
